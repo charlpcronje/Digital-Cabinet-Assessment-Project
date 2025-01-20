@@ -1,0 +1,91 @@
+version: '3.9'
+
+services:
+  react:
+    image: node:18
+    container_name: react-app
+    working_dir: /usr/src/app
+    volumes:
+      - ./frontend/react:/usr/src/app
+    ports:
+      - "3010:3010"
+    command: sh -c "npm install && npm run dev"
+    environment:
+      - NODE_ENV=development
+
+  vue:
+    image: node:18
+    container_name: vue-app
+    working_dir: /usr/src/app
+    volumes:
+      - ./frontend/vue:/usr/src/app
+    ports:
+      - "3011:3000"
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    environment:
+      - NODE_ENV=development
+
+  svelte:
+    image: node:18
+    container_name: svelte-app
+    working_dir: /usr/src/app
+    volumes:
+      - ./frontend/svelte:/usr/src/app
+    ports:
+      - "3012:5173"
+    command: sh -c "npm install && npm run dev -- --host 0.0.0.0"
+    environment:
+      - NODE_ENV=development
+
+  php:
+    image: php:8.2-apache
+    container_name: php-backend
+    volumes:
+      - ./backend:/var/www/html
+    ports:
+      - "8088:80"
+
+  redis:
+    image: redis:7
+    container_name: redis
+    ports:
+      - "6379:6379"
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: 4334.4334
+      MYSQL_DATABASE: tmdb
+      MYSQL_USER: cp
+      MYSQL_PASSWORD: 4334.4334
+    ports:
+      - "3307:3306"
+    volumes:
+      - ./mysql_data:/var/lib/mysql
+
+metrixrouter:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: metrix-router
+    volumes:
+      - ./config:/app/config # For config.toml
+      - ./src:/app/src       # Source code
+    ports:
+      - "4000:4000"          # Expose MetrixRouter's port
+    command: ./target/debug/MetrixRouter
+    environment:
+      - RUST_LOG=debug
+    depends_on:
+      - redis
+      - mysql
+      - php
+      - react
+      - vue
+      - svelte
+
+
+volumes:
+  mysql_data:
